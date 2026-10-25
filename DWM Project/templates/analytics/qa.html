@@ -1,0 +1,135 @@
+{% extends 'base.html' %}
+
+{% block title %}Ask Fitness Analytics{% endblock %}
+{% block page_title %}Ask Fitness Analytics (Intelligent Q&A){% endblock %}
+
+{% block content %}
+<div class="row g-4">
+    <!-- Left Column: Question Selection and Search -->
+    <div class="col-lg-5">
+        <div class="card h-100">
+            <div class="card-header bg-white">
+                <h6 class="fw-bold mb-0"><i class="fa-solid fa-circle-question text-primary me-2"></i>Select or Search Analytical Questions</h6>
+                <small class="text-muted">Answers are calculated dynamically from warehouse data, not hard-coded.</small>
+            </div>
+            <div class="card-body">
+                <!-- Search Box -->
+                <form method="GET" class="mb-3">
+                    <div class="input-group">
+                        <input type="text" name="q" class="form-control" placeholder="Ask a fitness data question..." value="{{ current_question }}">
+                        <button type="submit" class="btn btn-primary"><i class="fa-solid fa-magnifying-glass"></i></button>
+                    </div>
+                </form>
+
+                <h6 class="small text-uppercase fw-bold text-muted mb-2">Supported Analytical Queries:</h6>
+                <div class="list-group list-group-flush border rounded overflow-auto" style="max-height: 480px;">
+                    {% for q in supported_questions %}
+                    <a href="?q={{ q.text|urlencode }}" class="list-group-item list-group-item-action py-3 {% if current_question == q.text %}active bg-primary-subtle text-primary border-primary fw-semibold{% endif %}">
+                        <div class="d-flex align-items-center justify-content-between">
+                            <span><i class="fa-solid fa-comment-dots me-2 opacity-75"></i>{{ q.text }}</span>
+                            <i class="fa-solid fa-chevron-right small opacity-50"></i>
+                        </div>
+                    </a>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Right Column: Analytical Finding & Recommendation -->
+    <div class="col-lg-7">
+        <div class="card h-100 shadow-sm border-0">
+            <div class="card-header bg-white border-bottom py-3">
+                <div class="badge bg-primary-subtle text-primary px-3 py-1 mb-1">
+                    <i class="fa-solid fa-database me-1"></i> Data Warehouse Live Analysis
+                </div>
+                <h4 class="fw-bold mb-0 text-dark">{{ answer.question }}</h4>
+            </div>
+
+            <div class="card-body p-4">
+                <!-- Finding Card -->
+                <div class="card bg-light border mb-4">
+                    <div class="card-body">
+                        <h6 class="fw-bold text-primary mb-2">
+                            <i class="fa-solid fa-magnifying-glass-chart me-2"></i>Analytical Finding
+                        </h6>
+                        <p class="fs-5 mb-0 text-dark fw-medium">{{ answer.finding }}</p>
+                    </div>
+                </div>
+
+                <!-- Live Computed Metric Badge -->
+                <div class="card bg-success-subtle border-success-subtle mb-4">
+                    <div class="card-body">
+                        <h6 class="fw-bold text-success mb-1">
+                            <i class="fa-solid fa-calculator me-2"></i>Computed Metric / Benchmark
+                        </h6>
+                        <div class="fs-6 fw-semibold text-dark">{{ answer.metric }}</div>
+                    </div>
+                </div>
+
+                <!-- Structured Reasoning & Recommendation Pipeline -->
+                <div class="reasoning-box mb-4">
+                    <h6 class="fw-bold text-dark mb-3"><i class="fa-solid fa-diagram-project text-primary me-2"></i>Data-to-Action Pipeline</h6>
+
+                    <!-- Recommendation Step -->
+                    <div class="reasoning-step">
+                        <div class="reasoning-badge bg-primary"><i class="fa-solid fa-check"></i></div>
+                        <h6 class="fw-bold text-primary mb-1">Actionable Recommendation</h6>
+                        <p class="text-secondary small mb-0">{{ answer.recommendation }}</p>
+                    </div>
+
+                    <!-- Reason Step -->
+                    <div class="reasoning-step">
+                        <div class="reasoning-badge bg-info"><i class="fa-solid fa-lightbulb"></i></div>
+                        <h6 class="fw-bold text-info mb-1">Underlying Warehouse Evidence & Reason</h6>
+                        <p class="text-secondary small mb-0">{{ answer.reason }}</p>
+                    </div>
+                </div>
+
+                <!-- Data Breakdown Table if Available -->
+                {% if answer.data_breakdown %}
+                <h6 class="fw-bold mb-2"><i class="fa-solid fa-table-list text-muted me-2"></i>Warehouse Cohort Breakdown</h6>
+                <div class="table-responsive">
+                    <table class="table table-sm table-hover align-middle border">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Category / Dimension</th>
+                                <th>Metric 1</th>
+                                <th>Metric 2</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for b in answer.data_breakdown %}
+                            <tr>
+                                <td class="fw-bold">{% if b.workout %}{{ b.workout }}{% else %}{{ b.bracket }}{% endif %}</td>
+                                <td>
+                                    {% if b.avg_calories %}
+                                        <span class="text-primary fw-semibold">{{ b.avg_calories }} kcal</span>
+                                    {% elif b.total_workouts %}
+                                        <span>{{ b.total_workouts }} workouts</span>
+                                    {% else %}
+                                        <span>{{ b.sessions }} sessions</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if b.burn_rate_per_min %}
+                                        <span class="text-success fw-bold">{{ b.burn_rate_per_min }} kcal/min</span>
+                                    {% elif b.avg_steps %}
+                                        <span class="text-secondary">{{ b.avg_steps }} steps/day</span>
+                                    {% elif b.pct %}
+                                        <span class="badge bg-light text-dark border">{{ b.pct }}%</span>
+                                    {% else %}
+                                        <span class="text-muted">{% if b.count %}{{ b.count }}{% else %}{{ b.session_count }}{% endif %} logged</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

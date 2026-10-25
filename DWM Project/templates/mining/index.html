@@ -1,0 +1,385 @@
+{% extends 'base.html' %}
+
+{% block title %}Data Mining & Machine Learning Module{% endblock %}
+{% block page_title %}Data Mining & Machine Learning Hub{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <p class="text-muted mb-0">Trained on current Data Warehouse facts. Demonstrating Unsupervised Clustering, Supervised Regression, Multi-class Classification, Apriori Association Mining, and Anomaly Detection.</p>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="/mining/predict/" class="btn btn-outline-primary btn-sm"><i class="fa-solid fa-calculator me-1"></i> Interactive Predictor</a>
+        <a href="/mining/retrain/" class="btn btn-primary btn-sm"><i class="fa-solid fa-arrows-rotate me-1"></i> Retrain All Models</a>
+    </div>
+</div>
+
+<!-- ============================================================== -->
+<!-- SECTION A: K-MEANS CLUSTERING -->
+<!-- ============================================================== -->
+<div class="card mb-4 shadow-sm border-0">
+    <div class="card-header bg-white d-flex justify-content-between align-items-center">
+        <div>
+            <h5 class="fw-bold mb-0 text-primary"><i class="fa-solid fa-diagram-project me-2"></i>A. K-Means User Activity Clustering</h5>
+            <small class="text-muted">Features: Age, BMI, Workout Frequency, Workout Duration, Calories, Heart Rate, Experience</small>
+        </div>
+        <div>
+            <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-3 py-2">
+                Silhouette Score: <strong>{{ kmeans.silhouette_score }}</strong>
+            </span>
+        </div>
+    </div>
+    <div class="card-body">
+        <div class="row g-4 mb-4">
+            <!-- Cluster Profiles Cards -->
+            {% for profile in kmeans.profiles %}
+            <div class="col-md-4">
+                <div class="card h-100 {% if forloop.counter == 1 %}border-success{% elif forloop.counter == 2 %}border-primary{% else %}border-secondary{% endif %}">
+                    <div class="card-header bg-transparent d-flex justify-content-between align-items-center">
+                        <span class="fw-bold {% if forloop.counter == 1 %}text-success{% elif forloop.counter == 2 %}text-primary{% else %}text-secondary{% endif %}">
+                            {{ profile.name }}
+                        </span>
+                        <span class="badge bg-light text-dark border">{{ profile.pct_users }}% Users</span>
+                    </div>
+                    <div class="card-body">
+                        <ul class="list-unstyled mb-0 small">
+                            <li class="mb-2 d-flex justify-content-between">
+                                <span class="text-muted">Total Users:</span>
+                                <strong>{{ profile.user_count }}</strong>
+                            </li>
+                            <li class="mb-2 d-flex justify-content-between">
+                                <span class="text-muted">Mean Calories:</span>
+                                <strong class="text-warning">{{ profile.avg_calories }} kcal</strong>
+                            </li>
+                            <li class="mb-2 d-flex justify-content-between">
+                                <span class="text-muted">Mean Duration:</span>
+                                <strong>{{ profile.avg_duration }} mins</strong>
+                            </li>
+                            <li class="mb-2 d-flex justify-content-between">
+                                <span class="text-muted">Mean Heart Rate:</span>
+                                <strong class="text-danger">{{ profile.avg_heart_rate }} bpm</strong>
+                            </li>
+                            <li class="mb-2 d-flex justify-content-between">
+                                <span class="text-muted">Mean BMI / Age:</span>
+                                <strong>{{ profile.avg_bmi }} / {{ profile.avg_age }}y</strong>
+                            </li>
+                            <li class="d-flex justify-content-between">
+                                <span class="text-muted">Dominant Exp:</span>
+                                <span class="badge bg-secondary-subtle text-secondary">{{ profile.top_experience }}</span>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- Clustering Projection Scatter Chart -->
+        <h6 class="fw-bold mb-2 small text-uppercase text-muted">2D Cluster Projection (Workout Duration vs Calories Burned)</h6>
+        <div style="height: 300px;">
+            <canvas id="clusterScatterChart"></canvas>
+        </div>
+    </div>
+</div>
+
+<!-- ============================================================== -->
+<!-- SECTION B: CALORIE PREDICTION REGRESSION -->
+<!-- ============================================================== -->
+<div class="card mb-4 shadow-sm border-0">
+    <div class="card-header bg-white d-flex justify-content-between align-items-center">
+        <div>
+            <h5 class="fw-bold mb-0 text-warning"><i class="fa-solid fa-fire-flame-curved me-2"></i>B. Calorie Prediction (Machine Learning Regression)</h5>
+            <small class="text-muted">Predicts Calories Burned using Age, Gender, Weight, BMI, Workout Type, Duration, Heart Rate, and Intensity</small>
+        </div>
+        <span class="badge bg-warning-subtle text-warning border border-warning-subtle px-3 py-2">
+            Selected Best: <strong>{{ regression.best_model }}</strong>
+        </span>
+    </div>
+    <div class="card-body">
+        <div class="row g-4 mb-4">
+            <!-- Model Performance Comparison -->
+            <div class="col-lg-6">
+                <div class="table-responsive">
+                    <table class="table table-bordered align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Regression Algorithm</th>
+                                <th>MAE (kcal)</th>
+                                <th>RMSE (kcal)</th>
+                                <th>R² Score</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr class="{% if regression.best_model == 'Random Forest Regressor' %}table-success{% endif %}">
+                                <td class="fw-bold">
+                                    <i class="fa-solid fa-tree text-success me-1"></i> Random Forest Regressor
+                                </td>
+                                <td>{{ regression.random_forest.mae }} kcal</td>
+                                <td>{{ regression.random_forest.rmse }} kcal</td>
+                                <td class="fw-bold text-success">{{ regression.random_forest.r2_score }}</td>
+                            </tr>
+                            <tr class="{% if regression.best_model == 'Linear Regression' %}table-success{% endif %}">
+                                <td class="fw-bold">
+                                    <i class="fa-solid fa-chart-line text-primary me-1"></i> Linear Regression
+                                </td>
+                                <td>{{ regression.linear_regression.mae }} kcal</td>
+                                <td>{{ regression.linear_regression.rmse }} kcal</td>
+                                <td class="fw-bold text-primary">{{ regression.linear_regression.r2_score }}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Feature Importances -->
+            <div class="col-lg-6">
+                <h6 class="fw-bold mb-2 small text-uppercase text-muted">Feature Importances (Random Forest)</h6>
+                <div class="p-3 bg-light rounded border">
+                    {% for feat in regression.feature_importances %}
+                    <div class="mb-2">
+                        <div class="d-flex justify-content-between small mb-1">
+                            <span>{{ feat.feature }}</span>
+                            <span class="fw-bold font-monospace">{{ feat.importance }}</span>
+                        </div>
+                        <div class="progress" style="height: 6px;">
+                            <div class="progress-bar bg-warning" role="progressbar" style="width: {% widthratio feat.importance 1 100 %}%;"></div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ============================================================== -->
+<!-- SECTION C: FITNESS CLASSIFICATION -->
+<!-- ============================================================== -->
+<div class="card mb-4 shadow-sm border-0">
+    <div class="card-header bg-white d-flex justify-content-between align-items-center">
+        <div>
+            <h5 class="fw-bold mb-0 text-success"><i class="fa-solid fa-award me-2"></i>C. Fitness Level Classification</h5>
+            <small class="text-muted">Classifies trainees into Beginner, Intermediate, and Advanced based on biometrics and workout telemetry</small>
+        </div>
+        <span class="badge bg-success-subtle text-success border border-success-subtle px-3 py-2">
+            Best Accuracy: <strong>{% widthratio classification.best_accuracy 1 100 %}%</strong> ({{ classification.best_model }})
+        </span>
+    </div>
+    <div class="card-body">
+        <div class="row g-4">
+            <!-- Metrics Table -->
+            <div class="col-lg-7">
+                <div class="table-responsive">
+                    <table class="table table-bordered align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Classifier</th>
+                                <th>Accuracy</th>
+                                <th>Precision</th>
+                                <th>Recall</th>
+                                <th>F1 Score</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr class="{% if classification.best_model == 'Random Forest' %}table-success{% endif %}">
+                                <td class="fw-bold"><i class="fa-solid fa-tree text-success me-1"></i> Random Forest</td>
+                                <td>{{ classification.random_forest.accuracy|floatformat:4 }}</td>
+                                <td>{{ classification.random_forest.precision|floatformat:4 }}</td>
+                                <td>{{ classification.random_forest.recall|floatformat:4 }}</td>
+                                <td class="fw-bold text-success">{{ classification.random_forest.f1_score|floatformat:4 }}</td>
+                            </tr>
+                            <tr class="{% if classification.best_model == 'Decision Tree' %}table-success{% endif %}">
+                                <td class="fw-bold"><i class="fa-solid fa-sitemap text-primary me-1"></i> Decision Tree</td>
+                                <td>{{ classification.decision_tree.accuracy|floatformat:4 }}</td>
+                                <td>{{ classification.decision_tree.precision|floatformat:4 }}</td>
+                                <td>{{ classification.decision_tree.recall|floatformat:4 }}</td>
+                                <td class="fw-bold">{{ classification.decision_tree.f1_score|floatformat:4 }}</td>
+                            </tr>
+                            <tr class="{% if classification.best_model == 'Logistic Regression' %}table-success{% endif %}">
+                                <td class="fw-bold"><i class="fa-solid fa-chart-line text-secondary me-1"></i> Logistic Regression</td>
+                                <td>{{ classification.logistic_regression.accuracy|floatformat:4 }}</td>
+                                <td>{{ classification.logistic_regression.precision|floatformat:4 }}</td>
+                                <td>{{ classification.logistic_regression.recall|floatformat:4 }}</td>
+                                <td class="fw-bold">{{ classification.logistic_regression.f1_score|floatformat:4 }}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Confusion Matrix Display -->
+            <div class="col-lg-5">
+                <h6 class="fw-bold mb-2 small text-uppercase text-muted">Confusion Matrix (Test Split)</h6>
+                <div class="p-3 bg-light rounded border text-center">
+                    <div class="table-responsive">
+                        <table class="table table-sm table-bordered mb-0">
+                            <thead class="table-secondary">
+                                <tr>
+                                    <th>Pred &rarr;</th>
+                                    {% for cls in classification.classes %}
+                                        <th>{{ cls }}</th>
+                                    {% endfor %}
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for row in classification.random_forest.confusion_matrix %}
+                                <tr>
+                                    <td class="fw-bold text-muted">{{ classification.classes|slice:forloop.counter|last }}</td>
+                                    {% for val in row %}
+                                    <td class="{% if forloop.parentloop.counter == forloop.counter %}table-success fw-bold text-success{% endif %}">
+                                        {{ val }}
+                                    </td>
+                                    {% endfor %}
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ============================================================== -->
+<!-- SECTION D: ASSOCIATION RULE MINING (APRIORI) -->
+<!-- ============================================================== -->
+<div class="card mb-4 shadow-sm border-0">
+    <div class="card-header bg-white d-flex justify-content-between align-items-center">
+        <div>
+            <h5 class="fw-bold mb-0 text-info"><i class="fa-solid fa-link me-2"></i>D. Association Rule Mining (Apriori Algorithm)</h5>
+            <small class="text-muted">Uncovers hidden behavioral rules between Workout Type, Fitness Goal, Experience, and Intensity</small>
+        </div>
+        <span class="badge bg-info-subtle text-info border border-info-subtle px-3 py-2">
+            Discovered: <strong>{{ association.rules_found }} Rules</strong>
+        </span>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive" style="max-height: 380px;">
+            <table class="table table-hover table-striped align-middle mb-0">
+                <thead class="table-light sticky-top">
+                    <tr>
+                        <th>Antecedent (IF)</th>
+                        <th>Consequent (THEN)</th>
+                        <th>Support</th>
+                        <th>Confidence</th>
+                        <th>Lift</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for r in association.rules %}
+                    <tr>
+                        <td class="fw-semibold text-primary">{{ r.antecedents }}</td>
+                        <td class="fw-bold text-success">&rarr; {{ r.consequents }}</td>
+                        <td><span class="font-monospace">{{ r.support }}</span></td>
+                        <td><span class="badge bg-light text-dark border">{{ r.confidence }}</span></td>
+                        <td><span class="badge bg-success-subtle text-success fw-bold">{{ r.lift }}x</span></td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5" class="text-center text-muted py-3">No association rules found above threshold.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- ============================================================== -->
+<!-- SECTION E: ANOMALY DETECTION -->
+<!-- ============================================================== -->
+<div class="card mb-4 shadow-sm border-0">
+    <div class="card-header bg-white d-flex justify-content-between align-items-center">
+        <div>
+            <h5 class="fw-bold mb-0 text-danger"><i class="fa-solid fa-triangle-exclamation me-2"></i>E. Anomaly Detection (Isolation Forest)</h5>
+            <small class="text-muted">Identifies unusual workouts: extreme heart rate, excessive duration, or anomalous energy expenditure</small>
+        </div>
+        <span class="badge bg-danger-subtle text-danger border border-danger-subtle px-3 py-2">
+            Flagged: <strong>{{ anomalies.anomaly_count }} Records</strong> ({{ anomalies.anomaly_percentage }}%)
+        </span>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive" style="max-height: 350px;">
+            <table class="table table-sm table-hover align-middle mb-0">
+                <thead class="table-light sticky-top">
+                    <tr>
+                        <th>Workout ID</th>
+                        <th>User ID</th>
+                        <th>Workout Type</th>
+                        <th>Duration</th>
+                        <th>Calories</th>
+                        <th>Heart Rate (Avg/Max)</th>
+                        <th>Status</th>
+                        <th>Anomaly Reason</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for a in anomalies.anomalies %}
+                    <tr>
+                        <td class="fw-bold">#{{ a.workout_id }}</td>
+                        <td>{{ a.user_id }}</td>
+                        <td>{{ a.workout_type }}</td>
+                        <td>{{ a.duration }} mins</td>
+                        <td class="text-warning fw-bold">{{ a.calories }} kcal</td>
+                        <td>{{ a.hr_avg }} / <span class="text-danger fw-bold">{{ a.hr_max }} bpm</span></td>
+                        <td><span class="badge bg-danger text-white">Potential Anomaly</span></td>
+                        <td class="small text-danger">{{ a.reasons }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="8" class="text-center text-muted py-3">No anomalies flagged.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    const kmData = {{ kmeans_json|safe }};
+    const samplePoints = kmData.sample_points || [];
+
+    // Group sample points by cluster
+    const cluster1 = samplePoints.filter(p => p.Cluster === 0).map(p => ({ x: p.Workout_Duration, y: p.Calories_Burned }));
+    const cluster2 = samplePoints.filter(p => p.Cluster === 1).map(p => ({ x: p.Workout_Duration, y: p.Calories_Burned }));
+    const cluster3 = samplePoints.filter(p => p.Cluster === 2).map(p => ({ x: p.Workout_Duration, y: p.Calories_Burned }));
+
+    new Chart(document.getElementById('clusterScatterChart'), {
+        type: 'scatter',
+        data: {
+            datasets: [
+                {
+                    label: 'Cluster 0',
+                    data: cluster1,
+                    backgroundColor: 'rgba(239, 68, 68, 0.7)',
+                    pointRadius: 5
+                },
+                {
+                    label: 'Cluster 1',
+                    data: cluster2,
+                    backgroundColor: 'rgba(2, 132, 199, 0.7)',
+                    pointRadius: 5
+                },
+                {
+                    label: 'Cluster 2',
+                    data: cluster3,
+                    backgroundColor: 'rgba(16, 185, 129, 0.7)',
+                    pointRadius: 5
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                x: { title: { display: true, text: 'Workout Duration (mins)' } },
+                y: { title: { display: true, text: 'Calories Burned (kcal)' } }
+            }
+        }
+    });
+</script>
+{% endblock %}

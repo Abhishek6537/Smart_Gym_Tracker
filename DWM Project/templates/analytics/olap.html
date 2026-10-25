@@ -1,0 +1,535 @@
+{% extends 'base.html' %}
+{% load custom_filters %}
+
+{% block title %}OLAP Multi-Dimensional Analysis{% endblock %}
+{% block page_title %}OLAP Multi-Dimensional Analytics{% endblock %}
+
+{% block content %}
+<!-- OLAP Navigation Tabs -->
+<div class="card mb-4">
+    <div class="card-header bg-white p-2">
+        <ul class="nav nav-pills card-header-pills">
+            <li class="nav-item">
+                <a class="nav-link {% if active_op == 'rollup' %}active{% endif %}" href="?op=rollup">
+                    <i class="fa-solid fa-arrow-up-right-dots me-1"></i> Roll-Up (Time Hierarchy)
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link {% if active_op == 'drilldown' %}active{% endif %}" href="?op=drilldown">
+                    <i class="fa-solid fa-arrow-down-wide-short me-1"></i> Drill-Down (Granular Time)
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link {% if active_op == 'slice' %}active{% endif %}" href="?op=slice">
+                    <i class="fa-solid fa-scissors me-1"></i> Slice (Single Dimension)
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link {% if active_op == 'dice' %}active{% endif %}" href="?op=dice">
+                    <i class="fa-solid fa-cubes me-1"></i> Dice (Multi-Criteria Subcube)
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link {% if active_op == 'pivot' %}active{% endif %}" href="?op=pivot">
+                    <i class="fa-solid fa-table-cells me-1"></i> Pivot (2D Cross-Tabulation)
+                </a>
+            </li>
+        </ul>
+    </div>
+</div>
+
+<!-- ============================================================== -->
+<!-- 1. ROLL-UP OPERATION -->
+<!-- ============================================================== -->
+{% if active_op == 'rollup' %}
+<div class="card mb-4">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <div>
+            <h5 class="mb-0 fw-bold"><i class="fa-solid fa-arrow-up-right-dots text-primary me-2"></i>Roll-Up Operation: Time Aggregation</h5>
+            <small class="text-muted">Aggregates measures along the date dimension: Day &rarr; Month &rarr; Quarter &rarr; Year</small>
+        </div>
+        <div class="btn-group btn-group-sm">
+            <a href="?op=rollup&rollup_level=year" class="btn btn-outline-primary {% if rollup_level == 'year' %}active{% endif %}">Yearly</a>
+            <a href="?op=rollup&rollup_level=quarter" class="btn btn-outline-primary {% if rollup_level == 'quarter' %}active{% endif %}">Quarterly</a>
+            <a href="?op=rollup&rollup_level=month" class="btn btn-outline-primary {% if rollup_level == 'month' %}active{% endif %}">Monthly</a>
+        </div>
+    </div>
+    <div class="card-body">
+        <div class="row g-4 mb-4">
+            <div class="col-lg-8">
+                <canvas id="rollupChart" height="260"></canvas>
+            </div>
+            <div class="col-lg-4">
+                <div class="p-3 bg-light rounded border h-100">
+                    <h6 class="fw-bold mb-2">Roll-Up Mechanism</h6>
+                    <p class="small text-muted mb-2">
+                        Roll-up performs dimension generalization by climbing up the concept hierarchy in the Time Dimension:
+                    </p>
+                    <div class="badge bg-primary-subtle text-primary mb-3">Day &rarr; Month &rarr; Quarter &rarr; Year</div>
+                    <ul class="small text-muted ps-3">
+                        <li>Aggregates total & average caloric turnover</li>
+                        <li>Summarizes session durations</li>
+                        <li>Evaluates mean cardiovascular workload</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="table-responsive">
+            <table class="table table-hover align-middle">
+                <thead>
+                    <tr>
+                        <th>Time Period</th>
+                        <th>Total Workouts</th>
+                        <th>Total Calories (kcal)</th>
+                        <th>Avg Calories / Session</th>
+                        <th>Avg Duration (mins)</th>
+                        <th>Avg Heart Rate (bpm)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in rollup_data %}
+                    <tr>
+                        <td class="fw-bold">{{ row.label }}</td>
+                        <td><span class="badge bg-secondary-subtle text-secondary">{{ row.total_workouts }}</span></td>
+                        <td>{{ row.total_calories|floatformat:1 }}</td>
+                        <td class="text-primary fw-semibold">{{ row.avg_calories|floatformat:1 }} kcal</td>
+                        <td>{{ row.avg_duration|floatformat:1 }} mins</td>
+                        <td><span class="text-danger fw-semibold">{{ row.avg_heart_rate|floatformat:1 }}</span> bpm</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- ============================================================== -->
+<!-- 2. DRILL-DOWN OPERATION -->
+<!-- ============================================================== -->
+{% if active_op == 'drilldown' %}
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0 fw-bold"><i class="fa-solid fa-arrow-down-wide-short text-info me-2"></i>Drill-Down Operation: Granular Exploration</h5>
+        <small class="text-muted">Navigates from summary to detailed levels: Year &rarr; Quarter &rarr; Month &rarr; Day</small>
+    </div>
+    <div class="card-body">
+        <!-- Breadcrumb Drill Path -->
+        <nav aria-label="breadcrumb" class="mb-3">
+            <ol class="breadcrumb p-2 bg-light rounded border">
+                <li class="breadcrumb-item"><a href="?op=drilldown">All Years</a></li>
+                {% if dd_data.year %}
+                    <li class="breadcrumb-item"><a href="?op=drilldown&dd_year={{ dd_data.year }}">Year {{ dd_data.year }}</a></li>
+                {% endif %}
+                {% if dd_data.quarter %}
+                    <li class="breadcrumb-item"><a href="?op=drilldown&dd_year={{ dd_data.year }}&dd_quarter={{ dd_data.quarter }}">Quarter {{ dd_data.quarter }}</a></li>
+                {% endif %}
+                {% if dd_data.month %}
+                    <li class="breadcrumb-item active">Month {{ dd_data.month }}</li>
+                {% endif %}
+            </ol>
+        </nav>
+
+        <div class="alert alert-info py-2 small d-flex align-items-center gap-2">
+            <i class="fa-solid fa-circle-info"></i>
+            <span>Current Drill Level: <strong>{{ dd_data.level|upper }}</strong>. Click any row or item below to drill into finer granularity.</span>
+        </div>
+
+        <div class="table-responsive">
+            <table class="table table-hover align-middle">
+                <thead>
+                    <tr>
+                        <th>Hierarchy Node</th>
+                        <th>Workouts Logged</th>
+                        <th>Total Calories</th>
+                        <th>Avg Calories</th>
+                        <th>Avg Duration</th>
+                        <th>Avg Heart Rate</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in dd_data.results %}
+                    <tr>
+                        <td class="fw-bold">{{ row.label }}</td>
+                        <td>{{ row.total_workouts }}</td>
+                        <td>{{ row.total_calories }} kcal</td>
+                        <td class="text-primary fw-semibold">{{ row.avg_calories }} kcal</td>
+                        <td>{{ row.avg_duration }} mins</td>
+                        <td>{{ row.avg_heart_rate }} bpm</td>
+                        <td>
+                            {% if dd_data.level == 'year' %}
+                                <a href="?op=drilldown&dd_year={{ row.key }}" class="btn btn-sm btn-outline-primary">
+                                    <i class="fa-solid fa-arrow-down me-1"></i> Drill Quarters
+                                </a>
+                            {% elif dd_data.level == 'quarter' %}
+                                <a href="?op=drilldown&dd_year={{ dd_data.year }}&dd_quarter={{ row.key }}" class="btn btn-sm btn-outline-primary">
+                                    <i class="fa-solid fa-arrow-down me-1"></i> Drill Months
+                                </a>
+                            {% elif dd_data.level == 'month' %}
+                                <a href="?op=drilldown&dd_year={{ dd_data.year }}&dd_quarter={{ dd_data.quarter }}&dd_month={{ row.key }}" class="btn btn-sm btn-outline-primary">
+                                    <i class="fa-solid fa-arrow-down me-1"></i> Drill Days
+                                </a>
+                            {% else %}
+                                <span class="badge bg-success-subtle text-success">Deepest Level</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- ============================================================== -->
+<!-- 3. SLICE OPERATION -->
+<!-- ============================================================== -->
+{% if active_op == 'slice' %}
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0 fw-bold"><i class="fa-solid fa-scissors text-danger me-2"></i>Slice Operation: Single Dimension Filter</h5>
+        <small class="text-muted">Fixes one dimension to a single predicate and computes the resulting sub-cube</small>
+    </div>
+    <div class="card-body">
+        <form method="GET" class="row g-3 mb-4">
+            <input type="hidden" name="op" value="slice">
+            <div class="col-md-4">
+                <label class="form-label small fw-bold">Select Dimension to Slice</label>
+                <select name="slice_dim" class="form-select" onchange="this.form.submit()">
+                    <option value="goal" {% if slice_dim == 'goal' %}selected{% endif %}>Fitness Goal</option>
+                    <option value="workout_type" {% if slice_dim == 'workout_type' %}selected{% endif %}>Workout Type</option>
+                    <option value="experience" {% if slice_dim == 'experience' %}selected{% endif %}>Experience Level</option>
+                    <option value="intensity" {% if slice_dim == 'intensity' %}selected{% endif %}>Intensity Level</option>
+                    <option value="gender" {% if slice_dim == 'gender' %}selected{% endif %}>Gender</option>
+                </select>
+            </div>
+            <div class="col-md-5">
+                <label class="form-label small fw-bold">Select Dimension Value</label>
+                <select name="slice_val" class="form-select">
+                    {% if slice_dim == 'goal' %}
+                        {% for g in goals %}
+                            <option value="{{ g }}" {% if slice_val == g %}selected{% endif %}>{{ g }}</option>
+                        {% endfor %}
+                    {% elif slice_dim == 'workout_type' %}
+                        {% for w in workout_types %}
+                            <option value="{{ w }}" {% if slice_val == w %}selected{% endif %}>{{ w }}</option>
+                        {% endfor %}
+                    {% elif slice_dim == 'experience' %}
+                        <option value="Beginner" {% if slice_val == 'Beginner' %}selected{% endif %}>Beginner</option>
+                        <option value="Intermediate" {% if slice_val == 'Intermediate' %}selected{% endif %}>Intermediate</option>
+                        <option value="Advanced" {% if slice_val == 'Advanced' %}selected{% endif %}>Advanced</option>
+                    {% elif slice_dim == 'intensity' %}
+                        <option value="Low" {% if slice_val == 'Low' %}selected{% endif %}>Low</option>
+                        <option value="Moderate" {% if slice_val == 'Moderate' %}selected{% endif %}>Moderate</option>
+                        <option value="High" {% if slice_val == 'High' %}selected{% endif %}>High</option>
+                        <option value="Very High" {% if slice_val == 'Very High' %}selected{% endif %}>Very High</option>
+                    {% else %}
+                        <option value="Male" {% if slice_val == 'Male' %}selected{% endif %}>Male</option>
+                        <option value="Female" {% if slice_val == 'Female' %}selected{% endif %}>Female</option>
+                    {% endif %}
+                </select>
+            </div>
+            <div class="col-md-3 d-flex align-items-end">
+                <button type="submit" class="btn btn-primary w-100"><i class="fa-solid fa-filter me-1"></i> Apply Slice</button>
+            </div>
+        </form>
+
+        <!-- Slice Summary Cards -->
+        <div class="row g-3 mb-4">
+            <div class="col-md-3">
+                <div class="p-3 bg-light rounded border text-center">
+                    <span class="text-muted small text-uppercase">Sliced Workouts</span>
+                    <h3 class="mb-0 fw-bold">{{ slice_data.summary.total_workouts }}</h3>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="p-3 bg-light rounded border text-center">
+                    <span class="text-muted small text-uppercase">Avg Calories</span>
+                    <h3 class="mb-0 fw-bold text-primary">{{ slice_data.summary.avg_calories }} kcal</h3>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="p-3 bg-light rounded border text-center">
+                    <span class="text-muted small text-uppercase">Avg Duration</span>
+                    <h3 class="mb-0 fw-bold text-success">{{ slice_data.summary.avg_duration }} mins</h3>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="p-3 bg-light rounded border text-center">
+                    <span class="text-muted small text-uppercase">Avg Heart Rate</span>
+                    <h3 class="mb-0 fw-bold text-danger">{{ slice_data.summary.avg_hr }} bpm</h3>
+                </div>
+            </div>
+        </div>
+
+        <h6 class="fw-bold mb-3">Breakdown by {{ slice_data.breakdown_name }}</h6>
+        <div class="table-responsive">
+            <table class="table table-hover align-middle">
+                <thead>
+                    <tr>
+                        <th>{{ slice_data.breakdown_name }}</th>
+                        <th>Sessions</th>
+                        <th>Avg Calories</th>
+                        <th>Avg Duration</th>
+                        <th>Avg Heart Rate</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in slice_data.breakdown %}
+                    <tr>
+                        <td class="fw-bold">{{ row.category }}</td>
+                        <td><span class="badge bg-secondary-subtle text-secondary">{{ row.count }}</span></td>
+                        <td class="text-primary fw-semibold">{{ row.avg_calories }} kcal</td>
+                        <td>{{ row.avg_duration }} mins</td>
+                        <td>{{ row.avg_hr }} bpm</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- ============================================================== -->
+<!-- 4. DICE OPERATION -->
+<!-- ============================================================== -->
+{% if active_op == 'dice' %}
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0 fw-bold"><i class="fa-solid fa-cubes text-warning me-2"></i>Dice Operation: Multi-Dimensional Subcube</h5>
+        <small class="text-muted">Defines a subcube by applying criteria across multiple dimensions simultaneously</small>
+    </div>
+    <div class="card-body">
+        <form method="GET" class="p-3 bg-light rounded border mb-4">
+            <input type="hidden" name="op" value="dice">
+            <div class="row g-3">
+                <div class="col-md-3">
+                    <label class="form-label small fw-bold">Experience Level</label>
+                    <select name="dice_exp" class="form-select form-select-sm">
+                        <option value="All" {% if dice_data.criteria.experience == 'All' %}selected{% endif %}>All Levels</option>
+                        <option value="Beginner" {% if dice_data.criteria.experience == 'Beginner' %}selected{% endif %}>Beginner</option>
+                        <option value="Intermediate" {% if dice_data.criteria.experience == 'Intermediate' %}selected{% endif %}>Intermediate</option>
+                        <option value="Advanced" {% if dice_data.criteria.experience == 'Advanced' %}selected{% endif %}>Advanced</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label small fw-bold">Min Age</label>
+                    <input type="number" name="dice_age_min" value="{{ dice_data.criteria.age_min }}" class="form-control form-control-sm">
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label small fw-bold">Max Age</label>
+                    <input type="number" name="dice_age_max" value="{{ dice_data.criteria.age_max }}" class="form-control form-control-sm">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label small fw-bold">Workout Type</label>
+                    <select name="dice_workout" class="form-select form-select-sm">
+                        <option value="All">All Types</option>
+                        {% for w in workout_types %}
+                            <option value="{{ w }}" {% if dice_data.criteria.workout_type == w %}selected{% endif %}>{{ w }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2 d-flex align-items-end">
+                    <button type="submit" class="btn btn-sm btn-primary w-100"><i class="fa-solid fa-filter me-1"></i> Apply Dice</button>
+                </div>
+            </div>
+        </form>
+
+        <!-- Subcube vs Baseline Benchmark -->
+        <div class="row g-3 mb-4">
+            <div class="col-md-6">
+                <div class="card p-3 border-primary">
+                    <h6 class="fw-bold text-primary mb-3">Subcube Profile ({{ dice_data.stats.count }} sessions)</h6>
+                    <div class="row text-center">
+                        <div class="col-4">
+                            <span class="text-muted small">Avg Calories</span>
+                            <h4 class="fw-bold text-primary">{{ dice_data.stats.avg_calories }} <span class="fs-6">kcal</span></h4>
+                        </div>
+                        <div class="col-4">
+                            <span class="text-muted small">Avg Duration</span>
+                            <h4 class="fw-bold text-success">{{ dice_data.stats.avg_duration }} <span class="fs-6">mins</span></h4>
+                        </div>
+                        <div class="col-4">
+                            <span class="text-muted small">Avg Heart Rate</span>
+                            <h4 class="fw-bold text-danger">{{ dice_data.stats.avg_hr }} <span class="fs-6">bpm</span></h4>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card p-3 border-secondary">
+                    <h6 class="fw-bold text-secondary mb-3">Whole Warehouse Baseline ({{ dice_data.baseline.total_workouts }} sessions)</h6>
+                    <div class="row text-center">
+                        <div class="col-4">
+                            <span class="text-muted small">Baseline Calories</span>
+                            <h4 class="fw-bold text-muted">{{ dice_data.baseline.avg_calories }} <span class="fs-6">kcal</span></h4>
+                        </div>
+                        <div class="col-4">
+                            <span class="text-muted small">Baseline Duration</span>
+                            <h4 class="fw-bold text-muted">{{ dice_data.baseline.avg_duration }} <span class="fs-6">mins</span></h4>
+                        </div>
+                        <div class="col-4">
+                            <span class="text-muted small">Baseline Heart Rate</span>
+                            <h4 class="fw-bold text-muted">{{ dice_data.baseline.avg_hr }} <span class="fs-6">bpm</span></h4>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <h6 class="fw-bold mb-3">Sample Matching Subcube Sessions</h6>
+        <div class="table-responsive">
+            <table class="table table-sm table-hover align-middle">
+                <thead>
+                    <tr>
+                        <th>User ID</th>
+                        <th>Age / Gender</th>
+                        <th>Experience</th>
+                        <th>Workout Type</th>
+                        <th>Duration</th>
+                        <th>Calories</th>
+                        <th>Heart Rate</th>
+                        <th>Date</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for s in dice_data.samples %}
+                    <tr>
+                        <td><strong>{{ s.user_key__user_id }}</strong></td>
+                        <td>{{ s.user_key__age }}y, {{ s.user_key__gender }}</td>
+                        <td><span class="badge bg-light text-dark border">{{ s.user_key__experience_level }}</span></td>
+                        <td>{{ s.exercise_key__workout_type }}</td>
+                        <td>{{ s.duration }} mins</td>
+                        <td class="text-primary fw-bold">{{ s.calories_burned }} kcal</td>
+                        <td>{{ s.average_heart_rate }} bpm</td>
+                        <td>{{ s.date_key__date }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="8" class="text-center text-muted py-3">No sessions matching this specific subcube criteria.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- ============================================================== -->
+<!-- 5. PIVOT OPERATION -->
+<!-- ============================================================== -->
+{% if active_op == 'pivot' %}
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0 fw-bold"><i class="fa-solid fa-table-cells text-success me-2"></i>Pivot Operation: 2D Cross-Tabulation Matrix</h5>
+        <small class="text-muted">Rotates the data axes to view multi-dimensional metrics across two intersecting dimensions</small>
+    </div>
+    <div class="card-body">
+        <form method="GET" class="row g-3 mb-4 p-3 bg-light rounded border">
+            <input type="hidden" name="op" value="pivot">
+            <div class="col-md-5">
+                <label class="form-label small fw-bold">Row Dimension (X-Axis)</label>
+                <select name="pivot_row" class="form-select form-select-sm">
+                    <option value="Workout Type" {% if pivot_row == 'Workout Type' %}selected{% endif %}>Workout Type</option>
+                    <option value="Fitness Goal" {% if pivot_row == 'Fitness Goal' %}selected{% endif %}>Fitness Goal</option>
+                    <option value="Experience Level" {% if pivot_row == 'Experience Level' %}selected{% endif %}>Experience Level</option>
+                    <option value="Intensity" {% if pivot_row == 'Intensity' %}selected{% endif %}>Intensity</option>
+                    <option value="Gender" {% if pivot_row == 'Gender' %}selected{% endif %}>Gender</option>
+                </select>
+            </div>
+            <div class="col-md-5">
+                <label class="form-label small fw-bold">Column Dimension (Y-Axis)</label>
+                <select name="pivot_col" class="form-select form-select-sm">
+                    <option value="Experience Level" {% if pivot_col == 'Experience Level' %}selected{% endif %}>Experience Level</option>
+                    <option value="Workout Type" {% if pivot_col == 'Workout Type' %}selected{% endif %}>Workout Type</option>
+                    <option value="Intensity" {% if pivot_col == 'Intensity' %}selected{% endif %}>Intensity</option>
+                    <option value="Gender" {% if pivot_col == 'Gender' %}selected{% endif %}>Gender</option>
+                </select>
+            </div>
+            <div class="col-md-2 d-flex align-items-end">
+                <button type="submit" class="btn btn-sm btn-primary w-100"><i class="fa-solid fa-rotate me-1"></i> Pivot Matrix</button>
+            </div>
+        </form>
+
+        <div class="alert alert-secondary py-2 small d-flex align-items-center gap-2">
+            <i class="fa-solid fa-info-circle"></i>
+            <span>Each cell displays: <strong>Avg Calories (kcal)</strong> &bull; Avg Duration (mins) &bull; [Workout Count]</span>
+        </div>
+
+        <div class="table-responsive">
+            <table class="table table-bordered table-hover align-middle">
+                <thead class="table-dark">
+                    <tr>
+                        <th>{{ pivot_data.row_dim }} &darr; \ {{ pivot_data.col_dim }} &rarr;</th>
+                        {% for col in pivot_data.col_labels %}
+                            <th class="text-center">{{ col }}</th>
+                        {% endfor %}
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in pivot_data.row_labels %}
+                    <tr>
+                        <td class="fw-bold bg-light">{{ row }}</td>
+                        {% for col in pivot_data.col_labels %}
+                            {% with cell=pivot_data.matrix|dict_key:row|dict_key:col %}
+                            <td class="text-center">
+                                {% if cell and cell.count > 0 %}
+                                    <div class="fw-bold text-primary">{{ cell.avg_calories }} kcal</div>
+                                    <div class="small text-muted">{{ cell.avg_duration }}m | {{ cell.avg_heart_rate }}bpm</div>
+                                    <span class="badge bg-light text-dark border font-monospace">{{ cell.count }} logs</span>
+                                {% else %}
+                                    <span class="text-muted">-</span>
+                                {% endif %}
+                            </td>
+                            {% endwith %}
+                        {% endfor %}
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_scripts %}
+{% if active_op == 'rollup' %}
+<script>
+    const rollupData = {{ rollup_json|safe }};
+    const labels = rollupData.map(d => d.label);
+    const calories = rollupData.map(d => d.avg_calories);
+    const durations = rollupData.map(d => d.avg_duration);
+
+    new Chart(document.getElementById('rollupChart'), {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [
+                {
+                    label: 'Avg Calories Burned (kcal)',
+                    data: calories,
+                    backgroundColor: '#0284c7',
+                    borderRadius: 6
+                },
+                {
+                    label: 'Avg Duration (mins)',
+                    data: durations,
+                    backgroundColor: '#10b981',
+                    borderRadius: 6
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            scales: { y: { beginAtZero: true } }
+        }
+    });
+</script>
+{% endif %}
+{% endblock %}

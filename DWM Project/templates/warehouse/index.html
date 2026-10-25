@@ -1,0 +1,384 @@
+{% extends 'base.html' %}
+
+{% block title %}Data Warehouse - Star Schema{% endblock %}
+{% block page_title %}Data Warehouse (Star Schema Architecture){% endblock %}
+
+{% block content %}
+<!-- Top Metrics Row -->
+<div class="row g-3 mb-4">
+    <div class="col-md-3">
+        <div class="card p-3 border-start border-4 border-primary">
+            <span class="text-muted small text-uppercase fw-bold">Fact Records</span>
+            <h3 class="fw-bold mb-0 text-primary">{{ stats.total_facts }}</h3>
+            <small class="text-muted">In Fact_Workout</small>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card p-3 border-start border-4 border-success">
+            <span class="text-muted small text-uppercase fw-bold">Dimension Entities</span>
+            <h3 class="fw-bold mb-0 text-success">{{ stats.total_users }} Users</h3>
+            <small class="text-muted">{{ stats.total_exercises }} Exercises | {{ stats.total_goals }} Goals</small>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card p-3 border-start border-4 border-warning">
+            <span class="text-muted small text-uppercase fw-bold">Temporal Grain</span>
+            <h3 class="fw-bold mb-0 text-warning">{{ stats.total_dates }} Dates</h3>
+            <small class="text-muted">{{ stats.earliest_date }} to {{ stats.latest_date }}</small>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card p-3 border-start border-4 border-danger">
+            <span class="text-muted small text-uppercase fw-bold">Total Energy Loaded</span>
+            <h3 class="fw-bold mb-0 text-danger">{{ stats.total_calories|floatformat:0 }} kcal</h3>
+            <small class="text-muted">Aggregated in Warehouse</small>
+        </div>
+    </div>
+</div>
+
+<!-- ============================================================== -->
+<!-- STAR SCHEMA VISUAL ARCHITECTURE -->
+<!-- ============================================================== -->
+<div class="card mb-4 shadow-sm border-0">
+    <div class="card-header bg-white d-flex justify-content-between align-items-center">
+        <div>
+            <h5 class="fw-bold mb-0"><i class="fa-solid fa-network-wired text-primary me-2"></i>Star Schema Architecture Diagram</h5>
+            <small class="text-muted">Central Fact Table joined with 4 De-normalized Dimension Tables</small>
+        </div>
+        <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#sqlModal">
+            <i class="fa-solid fa-code me-1"></i> View MySQL DDL Script
+        </button>
+    </div>
+    <div class="card-body bg-light p-4">
+        <div class="row g-4 align-items-center">
+            <!-- Left Dimension: Dim_User -->
+            <div class="col-lg-3">
+                <div class="schema-node border-primary mb-3">
+                    <div class="schema-header text-primary">
+                        <span><i class="fa-solid fa-users me-1"></i> Dim_User</span>
+                        <span class="badge bg-primary">DIM</span>
+                    </div>
+                    <div class="schema-col-list">
+                        <div class="pk"><i class="fa-solid fa-key me-1"></i> user_key [PK]</div>
+                        <div>user_id</div>
+                        <div>age</div>
+                        <div>gender</div>
+                        <div>height</div>
+                        <div>weight</div>
+                        <div>bmi</div>
+                        <div>experience_level</div>
+                    </div>
+                </div>
+
+                <!-- Dim_Exercise -->
+                <div class="schema-node border-success">
+                    <div class="schema-header text-success">
+                        <span><i class="fa-solid fa-dumbbell me-1"></i> Dim_Exercise</span>
+                        <span class="badge bg-success">DIM</span>
+                    </div>
+                    <div class="schema-col-list">
+                        <div class="pk"><i class="fa-solid fa-key me-1"></i> exercise_key [PK]</div>
+                        <div>workout_type</div>
+                        <div>exercise_category</div>
+                        <div>intensity_level</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Center: Fact_Workout -->
+            <div class="col-lg-6">
+                <div class="schema-node fact-node p-4 text-center">
+                    <div class="d-flex justify-content-between align-items-center border-bottom pb-2 mb-3">
+                        <span class="fw-bold fs-5 text-dark"><i class="fa-solid fa-server text-warning me-2"></i>Fact_Workout</span>
+                        <span class="badge bg-warning text-dark px-3 py-1">CENTRAL FACT TABLE</span>
+                    </div>
+
+                    <div class="row text-start">
+                        <div class="col-md-6 border-end">
+                            <h6 class="small fw-bold text-muted text-uppercase mb-2">Foreign Keys (Dimensions)</h6>
+                            <div class="schema-col-list">
+                                <div class="pk mb-1"><i class="fa-solid fa-key me-1"></i> workout_id [PK]</div>
+                                <div class="fk"><i class="fa-solid fa-link me-1"></i> user_key &rarr; Dim_User</div>
+                                <div class="fk"><i class="fa-solid fa-link me-1"></i> exercise_key &rarr; Dim_Exercise</div>
+                                <div class="fk"><i class="fa-solid fa-link me-1"></i> date_key &rarr; Dim_Date</div>
+                                <div class="fk"><i class="fa-solid fa-link me-1"></i> goal_key &rarr; Dim_Goal</div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6 ps-md-3">
+                            <h6 class="small fw-bold text-muted text-uppercase mb-2">Measures & Facts</h6>
+                            <div class="schema-col-list">
+                                <div class="fw-bold text-danger">&bull; duration (minutes)</div>
+                                <div class="fw-bold text-danger">&bull; calories_burned (kcal)</div>
+                                <div class="fw-bold text-danger">&bull; average_heart_rate (bpm)</div>
+                                <div class="fw-bold text-danger">&bull; maximum_heart_rate (bpm)</div>
+                                <div>&bull; water_intake (liters)</div>
+                                <div>&bull; steps (count)</div>
+                                <div>&bull; sleep_hours (hrs)</div>
+                                <div>&bull; intensity (categorical)</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Dimension: Dim_Date & Dim_Goal -->
+            <div class="col-lg-3">
+                <div class="schema-node border-info mb-3">
+                    <div class="schema-header text-info">
+                        <span><i class="fa-solid fa-calendar me-1"></i> Dim_Date</span>
+                        <span class="badge bg-info">DIM</span>
+                    </div>
+                    <div class="schema-col-list">
+                        <div class="pk"><i class="fa-solid fa-key me-1"></i> date_key [PK: YYYYMMDD]</div>
+                        <div>date</div>
+                        <div>day</div>
+                        <div>month</div>
+                        <div>month_name</div>
+                        <div>quarter</div>
+                        <div>year</div>
+                        <div>week</div>
+                    </div>
+                </div>
+
+                <!-- Dim_Goal -->
+                <div class="schema-node border-warning">
+                    <div class="schema-header text-warning">
+                        <span><i class="fa-solid fa-bullseye me-1"></i> Dim_Goal</span>
+                        <span class="badge bg-warning text-dark">DIM</span>
+                    </div>
+                    <div class="schema-col-list">
+                        <div class="pk"><i class="fa-solid fa-key me-1"></i> goal_key [PK]</div>
+                        <div>fitness_goal</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ============================================================== -->
+<!-- TABLE BROWSER -->
+<!-- ============================================================== -->
+<div class="card shadow-sm border-0">
+    <div class="card-header bg-white d-flex justify-content-between align-items-center">
+        <div>
+            <h5 class="fw-bold mb-0"><i class="fa-solid fa-table me-2 text-primary"></i>Data Warehouse Table Browser</h5>
+            <small class="text-muted">Browsing: <strong>{{ table_name }}</strong></small>
+        </div>
+        <div class="btn-group btn-group-sm">
+            <a href="?table=fact" class="btn btn-outline-primary {% if active_table == 'fact' %}active{% endif %}">Fact_Workout</a>
+            <a href="?table=dim_user" class="btn btn-outline-primary {% if active_table == 'dim_user' %}active{% endif %}">Dim_User</a>
+            <a href="?table=dim_exercise" class="btn btn-outline-primary {% if active_table == 'dim_exercise' %}active{% endif %}">Dim_Exercise</a>
+            <a href="?table=dim_date" class="btn btn-outline-primary {% if active_table == 'dim_date' %}active{% endif %}">Dim_Date</a>
+            <a href="?table=dim_goal" class="btn btn-outline-primary {% if active_table == 'dim_goal' %}active{% endif %}">Dim_Goal</a>
+        </div>
+    </div>
+
+    <div class="card-body p-0">
+        <div class="table-responsive" style="max-height: 480px;">
+            {% if active_table == 'fact' %}
+            <table class="table table-hover table-striped align-middle mb-0">
+                <thead class="table-light sticky-top">
+                    <tr>
+                        <th>Workout ID</th>
+                        <th>User ID</th>
+                        <th>Workout Type</th>
+                        <th>Goal</th>
+                        <th>Date</th>
+                        <th>Duration</th>
+                        <th>Calories</th>
+                        <th>Heart Rate (Avg/Max)</th>
+                        <th>Steps</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in table_data %}
+                    <tr>
+                        <td class="fw-bold">#{{ row.workout_id }}</td>
+                        <td>{{ row.user_key.user_id }}</td>
+                        <td><span class="badge bg-light text-dark border">{{ row.exercise_key.workout_type }}</span></td>
+                        <td>{{ row.goal_key.fitness_goal }}</td>
+                        <td>{{ row.date_key.date }}</td>
+                        <td>{{ row.duration }} mins</td>
+                        <td class="text-warning fw-bold">{{ row.calories_burned }} kcal</td>
+                        <td>{{ row.average_heart_rate }} / {{ row.maximum_heart_rate }} bpm</td>
+                        <td>{{ row.steps }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% elif active_table == 'dim_user' %}
+            <table class="table table-hover table-striped align-middle mb-0">
+                <thead class="table-light sticky-top">
+                    <tr>
+                        <th>User Key</th>
+                        <th>User ID</th>
+                        <th>Age</th>
+                        <th>Gender</th>
+                        <th>Height (cm)</th>
+                        <th>Weight (kg)</th>
+                        <th>BMI</th>
+                        <th>Experience</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in table_data %}
+                    <tr>
+                        <td class="fw-bold font-monospace">{{ row.user_key }}</td>
+                        <td><strong>{{ row.user_id }}</strong></td>
+                        <td>{{ row.age }}</td>
+                        <td>{{ row.gender }}</td>
+                        <td>{{ row.height }}</td>
+                        <td>{{ row.weight }}</td>
+                        <td><span class="badge bg-primary-subtle text-primary">{{ row.bmi }}</span></td>
+                        <td>{{ row.experience_level }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% elif active_table == 'dim_exercise' %}
+            <table class="table table-hover table-striped align-middle mb-0">
+                <thead class="table-light sticky-top">
+                    <tr>
+                        <th>Exercise Key</th>
+                        <th>Workout Type</th>
+                        <th>Exercise Category</th>
+                        <th>Intensity Level</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in table_data %}
+                    <tr>
+                        <td class="fw-bold font-monospace">{{ row.exercise_key }}</td>
+                        <td class="fw-bold">{{ row.workout_type }}</td>
+                        <td>{{ row.exercise_category }}</td>
+                        <td><span class="badge bg-warning-subtle text-warning border">{{ row.intensity_level }}</span></td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% elif active_table == 'dim_date' %}
+            <table class="table table-hover table-striped align-middle mb-0">
+                <thead class="table-light sticky-top">
+                    <tr>
+                        <th>Date Key</th>
+                        <th>Date</th>
+                        <th>Day</th>
+                        <th>Month</th>
+                        <th>Month Name</th>
+                        <th>Quarter</th>
+                        <th>Year</th>
+                        <th>Week</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in table_data %}
+                    <tr>
+                        <td class="fw-bold font-monospace">{{ row.date_key }}</td>
+                        <td>{{ row.date }}</td>
+                        <td>{{ row.day }}</td>
+                        <td>{{ row.month }}</td>
+                        <td>{{ row.month_name }}</td>
+                        <td>Q{{ row.quarter }}</td>
+                        <td class="fw-bold">{{ row.year }}</td>
+                        <td>W{{ row.week }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% elif active_table == 'dim_goal' %}
+            <table class="table table-hover table-striped align-middle mb-0">
+                <thead class="table-light sticky-top">
+                    <tr>
+                        <th>Goal Key</th>
+                        <th>Fitness Goal</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in table_data %}
+                    <tr>
+                        <td class="fw-bold font-monospace">{{ row.goal_key }}</td>
+                        <td class="fw-bold text-primary">{{ row.fitness_goal }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- SQL Modal -->
+<div class="modal fade" id="sqlModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title fw-bold">MySQL Star Schema DDL Script</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <pre class="bg-dark text-light p-3 rounded" style="max-height: 400px; font-size: 0.82rem;"><code>CREATE DATABASE IF NOT EXISTS fitness_dw;
+USE fitness_dw;
+
+CREATE TABLE dim_user (
+    user_key INT AUTO_INCREMENT PRIMARY KEY,
+    user_id VARCHAR(50) NOT NULL UNIQUE,
+    age INT NOT NULL,
+    gender VARCHAR(20) NOT NULL,
+    height DECIMAL(5,2) NOT NULL,
+    weight DECIMAL(5,2) NOT NULL,
+    bmi DECIMAL(4,1) NOT NULL,
+    experience_level VARCHAR(30) NOT NULL
+);
+
+CREATE TABLE dim_exercise (
+    exercise_key INT AUTO_INCREMENT PRIMARY KEY,
+    workout_type VARCHAR(50) NOT NULL,
+    exercise_category VARCHAR(50) NOT NULL,
+    intensity_level VARCHAR(30) NOT NULL
+);
+
+CREATE TABLE dim_date (
+    date_key INT PRIMARY KEY,
+    date DATE NOT NULL UNIQUE,
+    day INT NOT NULL,
+    month INT NOT NULL,
+    month_name VARCHAR(20) NOT NULL,
+    quarter INT NOT NULL,
+    year INT NOT NULL,
+    week INT NOT NULL
+);
+
+CREATE TABLE dim_goal (
+    goal_key INT AUTO_INCREMENT PRIMARY KEY,
+    fitness_goal VARCHAR(60) NOT NULL UNIQUE
+);
+
+CREATE TABLE fact_workout (
+    workout_id INT AUTO_INCREMENT PRIMARY KEY,
+    user_key INT NOT NULL,
+    exercise_key INT NOT NULL,
+    date_key INT NOT NULL,
+    goal_key INT NOT NULL,
+    duration DECIMAL(6,2) NOT NULL,
+    calories_burned DECIMAL(7,2) NOT NULL,
+    average_heart_rate DECIMAL(5,2) NOT NULL,
+    maximum_heart_rate DECIMAL(5,2) NOT NULL,
+    water_intake DECIMAL(4,2) NOT NULL,
+    steps INT NOT NULL,
+    sleep_hours DECIMAL(4,2) NOT NULL,
+    intensity VARCHAR(30) NOT NULL,
+    FOREIGN KEY (user_key) REFERENCES dim_user(user_key),
+    FOREIGN KEY (exercise_key) REFERENCES dim_exercise(exercise_key),
+    FOREIGN KEY (date_key) REFERENCES dim_date(date_key),
+    FOREIGN KEY (goal_key) REFERENCES dim_goal(goal_key)
+);</code></pre>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

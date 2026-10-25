@@ -1,0 +1,212 @@
+{% extends 'base.html' %}
+
+{% block title %}ETL Pipeline Management{% endblock %}
+{% block page_title %}ETL Data Pipeline (Extract &bull; Transform &bull; Load){% endblock %}
+
+{% block content %}
+<!-- Pipeline Flowchart Diagram -->
+<div class="card mb-4 shadow-sm border-0">
+    <div class="card-header bg-white">
+        <h6 class="fw-bold mb-0 text-primary"><i class="fa-solid fa-arrows-spin me-2"></i>Automated Data Pipeline Architecture</h6>
+    </div>
+    <div class="card-body p-4">
+        <div class="row g-2 text-center align-items-center">
+            <div class="col-md-2">
+                <div class="p-3 bg-light rounded border">
+                    <i class="fa-solid fa-file-csv fs-3 text-secondary mb-2"></i>
+                    <h6 class="fw-bold mb-0 small">1. Extract</h6>
+                    <small class="text-muted">CSV / Excel Raw Files</small>
+                </div>
+            </div>
+            <div class="col-md-auto d-none d-md-block text-muted"><i class="fa-solid fa-arrow-right"></i></div>
+
+            <div class="col-md-2">
+                <div class="p-3 bg-light rounded border">
+                    <i class="fa-solid fa-broom fs-3 text-warning mb-2"></i>
+                    <h6 class="fw-bold mb-0 small">2. Clean</h6>
+                    <small class="text-muted">Duplicates &amp; Nulls</small>
+                </div>
+            </div>
+            <div class="col-md-auto d-none d-md-block text-muted"><i class="fa-solid fa-arrow-right"></i></div>
+
+            <div class="col-md-2">
+                <div class="p-3 bg-light rounded border">
+                    <i class="fa-solid fa-gears fs-3 text-info mb-2"></i>
+                    <h6 class="fw-bold mb-0 small">3. Transform</h6>
+                    <small class="text-muted">BMI &amp; Outliers Capping</small>
+                </div>
+            </div>
+            <div class="col-md-auto d-none d-md-block text-muted"><i class="fa-solid fa-arrow-right"></i></div>
+
+            <div class="col-md-2">
+                <div class="p-3 bg-light rounded border">
+                    <i class="fa-solid fa-calculator fs-3 text-primary mb-2"></i>
+                    <h6 class="fw-bold mb-0 small">4. Engineer</h6>
+                    <small class="text-muted">MET &amp; Calorie Burn Rate</small>
+                </div>
+            </div>
+            <div class="col-md-auto d-none d-md-block text-muted"><i class="fa-solid fa-arrow-right"></i></div>
+
+            <div class="col-md-2">
+                <div class="p-3 bg-success-subtle text-success rounded border border-success-subtle">
+                    <i class="fa-solid fa-server fs-3 mb-2"></i>
+                    <h6 class="fw-bold mb-0 small">5. Load</h6>
+                    <small>Star Schema DW</small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4 mb-4">
+    <!-- Execute ETL Trigger Card -->
+    <div class="col-lg-5">
+        <div class="card h-100 shadow-sm border-0">
+            <div class="card-header bg-white">
+                <h6 class="fw-bold mb-0 text-success"><i class="fa-solid fa-play me-2"></i>Trigger Pipeline Execution</h6>
+                <small class="text-muted">Runs extract, transform, and star-schema loading</small>
+            </div>
+            <div class="card-body p-4">
+                <form action="/etl/run/" method="POST" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold">Select Source Dataset</label>
+                        <div class="p-3 bg-light rounded border mb-2">
+                            <div class="d-flex align-items-center justify-content-between">
+                                <div>
+                                    <strong>{{ default_filename }}</strong>
+                                    <div class="small text-muted">{{ file_size_kb }} KB &bull; Over 6,000 Records</div>
+                                </div>
+                                <span class="badge bg-success">Default Active</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label small fw-bold">Or Upload Custom Dataset (.csv / .xlsx)</label>
+                        <input type="file" name="dataset_file" class="form-control form-control-sm" accept=".csv, .xlsx, .xls">
+                    </div>
+
+                    <button type="submit" class="btn btn-success w-100 py-2 fw-semibold">
+                        <i class="fa-solid fa-arrows-spin me-2"></i>Run ETL Pipeline Now
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Latest ETL Metrics -->
+    <div class="col-lg-7">
+        <div class="card h-100 shadow-sm border-0">
+            <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                <h6 class="fw-bold mb-0"><i class="fa-solid fa-circle-check text-success me-2"></i>Latest Execution Metrics</h6>
+                {% if latest_log %}
+                    <span class="badge {% if latest_log.status == 'SUCCESS' %}bg-success{% else %}bg-danger{% endif %}">{{ latest_log.status }}</span>
+                {% endif %}
+            </div>
+            <div class="card-body p-4">
+                {% if latest_log %}
+                <div class="row g-3 mb-3 text-center">
+                    <div class="col-sm-4">
+                        <div class="p-3 bg-light rounded border">
+                            <span class="text-muted small text-uppercase">Raw Input</span>
+                            <h4 class="fw-bold mb-0">{{ latest_log.raw_records_count }}</h4>
+                        </div>
+                    </div>
+                    <div class="col-sm-4">
+                        <div class="p-3 bg-light rounded border">
+                            <span class="text-muted small text-uppercase">Cleaned &amp; Validated</span>
+                            <h4 class="fw-bold mb-0 text-primary">{{ latest_log.cleaned_records_count }}</h4>
+                        </div>
+                    </div>
+                    <div class="col-sm-4">
+                        <div class="p-3 bg-light rounded border">
+                            <span class="text-muted small text-uppercase">Loaded to DW</span>
+                            <h4 class="fw-bold mb-0 text-success">{{ latest_log.loaded_records_count }}</h4>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row g-3 mb-3 text-center">
+                    <div class="col-sm-4">
+                        <div class="p-2 bg-light rounded border">
+                            <small class="text-muted">Duplicates Removed:</small>
+                            <div class="fw-bold">{{ latest_log.duplicates_removed }}</div>
+                        </div>
+                    </div>
+                    <div class="col-sm-4">
+                        <div class="p-2 bg-light rounded border">
+                            <small class="text-muted">Outliers Harmonized:</small>
+                            <div class="fw-bold text-warning">{{ latest_log.outliers_detected }}</div>
+                        </div>
+                    </div>
+                    <div class="col-sm-4">
+                        <div class="p-2 bg-light rounded border">
+                            <small class="text-muted">Execution Duration:</small>
+                            <div class="fw-bold text-info">{{ latest_log.execution_time_seconds }}s</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="p-3 bg-dark text-light rounded font-monospace small" style="max-height: 140px; overflow-y: auto;">
+                    {{ latest_log.details_log|linebreaksbr }}
+                </div>
+                {% else %}
+                <p class="text-muted text-center py-4">No ETL executions recorded yet. Click "Run ETL Pipeline Now" to execute.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ETL Execution History Table -->
+<div class="card shadow-sm border-0">
+    <div class="card-header bg-white">
+        <h6 class="fw-bold mb-0"><i class="fa-solid fa-list-check me-2 text-primary"></i>Pipeline Execution Audit Trail</h6>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Run ID</th>
+                        <th>Timestamp</th>
+                        <th>Status</th>
+                        <th>File Source</th>
+                        <th>Raw Count</th>
+                        <th>Cleaned</th>
+                        <th>Loaded</th>
+                        <th>Dups</th>
+                        <th>Outliers</th>
+                        <th>Time</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for log in logs %}
+                    <tr>
+                        <td class="fw-bold font-monospace">#{{ log.id }}</td>
+                        <td class="small">{{ log.run_date|date:"Y-m-d H:i:s" }}</td>
+                        <td>
+                            <span class="badge {% if log.status == 'SUCCESS' %}bg-success{% elif log.status == 'RUNNING' %}bg-warning text-dark{% else %}bg-danger{% endif %}">
+                                {{ log.status }}
+                            </span>
+                        </td>
+                        <td class="small">{{ log.source_file }}</td>
+                        <td>{{ log.raw_records_count }}</td>
+                        <td>{{ log.cleaned_records_count }}</td>
+                        <td class="fw-bold text-success">{{ log.loaded_records_count }}</td>
+                        <td>{{ log.duplicates_removed }}</td>
+                        <td>{{ log.outliers_detected }}</td>
+                        <td>{{ log.execution_time_seconds }}s</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="10" class="text-center text-muted py-3">No history logs yet.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

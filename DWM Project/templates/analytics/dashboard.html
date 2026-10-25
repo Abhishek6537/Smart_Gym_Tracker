@@ -1,0 +1,587 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Executive Analytics Dashboard{% endblock %}
+{% block page_title %}Executive Analytics Dashboard{% endblock %}
+
+{% block content %}
+<!-- Premium workout hero -->
+<section class="fitness-hero animate-fade-in mb-4">
+    <img class="fitness-hero-image" src="{% static 'images/workouts/hero_gym.jpg' %}" alt="Athlete training in a modern gym" onerror="this.style.display='none'">
+    <div class="fitness-hero-overlay"></div>
+    <div class="fitness-hero-content">
+        <span class="hero-eyebrow"><i class="fa-solid fa-bolt me-2"></i>FITPULSE INTELLIGENCE</span>
+        <h1 class="fitness-hero-title">Train smarter.<br><span>Analyze better.</span></h1>
+        <p>Turn workout data into meaningful insights, measurable progress, and smarter fitness decisions.</p>
+        <div class="d-flex flex-wrap gap-2 mt-4">
+            <a href="/recommendations/" class="btn btn-lime btn-lg"><i class="fa-solid fa-wand-magic-sparkles me-2"></i>Get My Recommendation</a>
+            <a href="#workout-gallery" class="btn btn-hero-outline btn-lg"><i class="fa-solid fa-dumbbell me-2"></i>Explore Workouts</a>
+        </div>
+    </div>
+    <div class="hero-floating-stat"><span class="pulse-dot"></span><div><strong>DATA-DRIVEN FITNESS</strong><small>Insights powered by your warehouse</small></div></div>
+</section>
+
+<!-- Image-led workout gallery -->
+<section id="workout-gallery" class="workout-gallery-section mb-4 reveal-on-scroll">
+    <div class="section-heading-row">
+        <div><span class="section-kicker">MOVE WITH PURPOSE</span><h3 class="section-heading">Explore workout categories</h3><p class="section-subtitle">Choose a training style to explore its analytics.</p></div>
+        <a href="/fitness/workouts/" class="section-link">View workout logs <i class="fa-solid fa-arrow-right ms-1"></i></a>
+    </div>
+    <div class="workout-image-grid">
+        <a class="workout-image-card" href="/fitness/workouts/" aria-label="Explore strength training">
+            <img src="{% static 'images/workouts/strength.jpg' %}" alt="Strength training with gym weights" loading="lazy" onerror="this.src='{% static 'images/workouts/dumbbells.jpg' %}'">
+            <div class="workout-image-shade"></div><div class="workout-image-copy"><span>01 / BUILD</span><h4>Strength Training</h4><p>Power · Progress · Performance</p></div><i class="fa-solid fa-arrow-up-right-from-square workout-card-arrow"></i>
+        </a>
+        <a class="workout-image-card" href="/fitness/workouts/" aria-label="Explore cardio workouts">
+            <img src="{% static 'images/workouts/cardio.jpg' %}" alt="Cardio workout session" loading="lazy" onerror="this.src='{% static 'images/workouts/running.jpg' %}'">
+            <div class="workout-image-shade"></div><div class="workout-image-copy"><span>02 / ENDURE</span><h4>Cardio</h4><p>Energy · Endurance · Rhythm</p></div><i class="fa-solid fa-arrow-up-right-from-square workout-card-arrow"></i>
+        </a>
+        <a class="workout-image-card" href="/fitness/workouts/" aria-label="Explore HIIT workouts">
+            <img src="{% static 'images/workouts/hiit.jpg' %}" alt="High intensity interval training" loading="lazy" onerror="this.src='{% static 'images/workouts/crossfit.jpg' %}'">
+            <div class="workout-image-shade"></div><div class="workout-image-copy"><span>03 / PUSH</span><h4>HIIT & Conditioning</h4><p>Intensity · Agility · Focus</p></div><i class="fa-solid fa-arrow-up-right-from-square workout-card-arrow"></i>
+        </a>
+        <a class="workout-image-card" href="/fitness/workouts/" aria-label="Explore yoga and mobility">
+            <img src="{% static 'images/workouts/yoga.jpg' %}" alt="Yoga and flexibility training" loading="lazy" onerror="this.src='{% static 'images/workouts/pilates.jpg' %}'">
+            <div class="workout-image-shade"></div><div class="workout-image-copy"><span>04 / RESET</span><h4>Yoga & Mobility</h4><p>Balance · Recovery · Control</p></div><i class="fa-solid fa-arrow-up-right-from-square workout-card-arrow"></i>
+        </a>
+    </div>
+</section>
+<!-- Top KPI Summary Cards -->
+<div class="row g-3 mb-4">
+    <!-- Total Users -->
+    <div class="col-xl-3 col-md-6">
+        <div class="card kpi-card reveal-on-scroll">
+            <div class="d-flex align-items-center justify-content-between">
+                <div>
+                    <div class="kpi-title">Total Users</div>
+                    <div class="kpi-val">{{ kpi.total_users }}</div>
+                    <small class="text-muted"><i class="fa-solid fa-users me-1 text-primary"></i> Registered in DW</small>
+                </div>
+                <div class="kpi-icon bg-primary-subtle text-primary">
+                    <i class="fa-solid fa-user-group"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Total Workouts -->
+    <div class="col-xl-3 col-md-6">
+        <div class="card kpi-card kpi-emerald reveal-on-scroll">
+            <div class="d-flex align-items-center justify-content-between">
+                <div>
+                    <div class="kpi-title">Total Workouts</div>
+                    <div class="kpi-val">{{ kpi.total_workouts }}</div>
+                    <small class="text-muted"><i class="fa-solid fa-database me-1 text-success"></i> Fact Table Records</small>
+                </div>
+                <div class="kpi-icon bg-success-subtle text-success">
+                    <i class="fa-solid fa-dumbbell"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Average Calories Burned -->
+    <div class="col-xl-3 col-md-6">
+        <div class="card kpi-card kpi-amber reveal-on-scroll">
+            <div class="d-flex align-items-center justify-content-between">
+                <div>
+                    <div class="kpi-title">Avg Calories / Session</div>
+                    <div class="kpi-val">{{ kpi.avg_calories }} <span class="fs-6 text-muted fw-normal">kcal</span></div>
+                    <small class="text-muted"><i class="fa-solid fa-fire me-1 text-warning"></i> Mean Expenditure</small>
+                </div>
+                <div class="kpi-icon bg-warning-subtle text-warning">
+                    <i class="fa-solid fa-fire-flame-curved"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Average Workout Duration -->
+    <div class="col-xl-3 col-md-6">
+        <div class="card kpi-card kpi-purple reveal-on-scroll">
+            <div class="d-flex align-items-center justify-content-between">
+                <div>
+                    <div class="kpi-title">Avg Duration</div>
+                    <div class="kpi-val">{{ kpi.avg_duration }} <span class="fs-6 text-muted fw-normal">mins</span></div>
+                    <small class="text-muted"><i class="fa-solid fa-clock me-1 text-info"></i> Session Length</small>
+                </div>
+                <div class="kpi-icon bg-info-subtle text-info">
+                    <i class="fa-solid fa-stopwatch"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Secondary KPI Cards Row -->
+<div class="row g-3 mb-4">
+    <div class="col-xl-3 col-md-6">
+        <div class="card p-3 d-flex flex-row align-items-center justify-content-between">
+            <div>
+                <span class="text-muted small text-uppercase fw-semibold">Avg Heart Rate</span>
+                <h4 class="mb-0 fw-bold text-danger">{{ kpi.avg_heart_rate }} <span class="fs-6 text-muted fw-normal">bpm</span></h4>
+            </div>
+            <i class="fa-solid fa-heart-pulse fs-2 text-danger opacity-75"></i>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6">
+        <div class="card p-3 d-flex flex-row align-items-center justify-content-between">
+            <div>
+                <span class="text-muted small text-uppercase fw-semibold">Avg User BMI</span>
+                <h4 class="mb-0 fw-bold text-primary">{{ kpi.avg_bmi }} <span class="fs-6 text-muted fw-normal">kg/m²</span></h4>
+            </div>
+            <i class="fa-solid fa-weight-scale fs-2 text-primary opacity-75"></i>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6">
+        <div class="card p-3 d-flex flex-row align-items-center justify-content-between">
+            <div>
+                <span class="text-muted small text-uppercase fw-semibold">Most Popular Workout</span>
+                <h4 class="mb-0 fw-bold text-success">{{ kpi.most_popular }}</h4>
+            </div>
+            <i class="fa-solid fa-ranking-star fs-2 text-success opacity-75"></i>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6">
+        <div class="card p-3 d-flex flex-row align-items-center justify-content-between">
+            <div>
+                <span class="text-muted small text-uppercase fw-semibold">Most Effective Workout</span>
+                <h4 class="mb-0 fw-bold text-warning">{{ kpi.most_effective }}</h4>
+            </div>
+            <i class="fa-solid fa-bolt fs-2 text-warning opacity-75"></i>
+        </div>
+    </div>
+</div>
+
+<!-- Analytical Action Bar -->
+<div class="card bg-primary text-white p-3 mb-4 shadow-sm border-0" style="background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%) !important;">
+    <div class="d-flex flex-wrap align-items-center justify-content-between gap-3">
+        <div>
+            <h5 class="fw-bold mb-1"><i class="fa-solid fa-brain me-2"></i>AI Fitness Analytics & Recommendation Hub</h5>
+            <p class="mb-0 small text-light opacity-90">Transform raw fitness datasets into personalized actionable guidance using Star Schema OLAP and ML models.</p>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="/recommendations/" class="btn btn-light btn-sm fw-semibold"><i class="fa-solid fa-wand-magic-sparkles me-1 text-primary"></i> Get Recommendation</a>
+            <a href="/mining/predict/" class="btn btn-outline-light btn-sm"><i class="fa-solid fa-fire me-1"></i> Predict Calories</a>
+            <a href="/analytics/olap/" class="btn btn-outline-light btn-sm"><i class="fa-solid fa-cube me-1"></i> OLAP Explorer</a>
+        </div>
+    </div>
+</div>
+
+<!-- Charts Section: 10 Interactive Visualizations -->
+<div class="row g-4 mb-4">
+    <!-- Chart 1: Calories by Workout Type -->
+    <div class="col-lg-6">
+        <div class="card h-100 chart-card reveal-on-scroll">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span class="fw-bold"><i class="fa-solid fa-chart-column text-primary me-2"></i>1. Calories Burned by Workout Type</span>
+                <span class="badge bg-light text-muted border">Bar Chart</span>
+            </div>
+            <div class="card-body">
+                <canvas id="chart1" height="260"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Chart 2: Average Duration by Workout Type -->
+    <div class="col-lg-6">
+        <div class="card h-100 chart-card reveal-on-scroll">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span class="fw-bold"><i class="fa-solid fa-stopwatch text-info me-2"></i>2. Average Workout Duration by Type</span>
+                <span class="badge bg-light text-muted border">Bar Chart</span>
+            </div>
+            <div class="card-body">
+                <canvas id="chart2" height="260"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Chart 3: Workout Frequency Distribution -->
+    <div class="col-lg-6">
+        <div class="card h-100 chart-card reveal-on-scroll">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span class="fw-bold"><i class="fa-solid fa-calendar-week text-success me-2"></i>3. Workout Frequency Distribution</span>
+                <span class="badge bg-light text-muted border">Days / Week</span>
+            </div>
+            <div class="card-body">
+                <canvas id="chart3" height="260"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Chart 4: BMI Distribution -->
+    <div class="col-lg-6">
+        <div class="card h-100 chart-card reveal-on-scroll">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span class="fw-bold"><i class="fa-solid fa-weight-scale text-warning me-2"></i>4. User BMI Distribution</span>
+                <span class="badge bg-light text-muted border">Histogram</span>
+            </div>
+            <div class="card-body">
+                <canvas id="chart4" height="260"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Chart 5: Calories vs Duration -->
+    <div class="col-lg-6">
+        <div class="card h-100 chart-card reveal-on-scroll">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span class="fw-bold"><i class="fa-solid fa-chart-line text-danger me-2"></i>5. Calories vs Workout Duration</span>
+                <span class="badge bg-light text-muted border">Scatter Trend</span>
+            </div>
+            <div class="card-body">
+                <canvas id="chart5" height="260"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Chart 6: Calories vs Heart Rate -->
+    <div class="col-lg-6">
+        <div class="card h-100 chart-card reveal-on-scroll">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span class="fw-bold"><i class="fa-solid fa-heart-pulse text-danger me-2"></i>6. Calories vs Average Heart Rate</span>
+                <span class="badge bg-light text-muted border">Scatter</span>
+            </div>
+            <div class="card-body">
+                <canvas id="chart6" height="260"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Chart 7: Users by Fitness Level -->
+    <div class="col-lg-6">
+        <div class="card h-100 chart-card reveal-on-scroll">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span class="fw-bold"><i class="fa-solid fa-medal text-warning me-2"></i>7. Users by Fitness Experience Level</span>
+                <span class="badge bg-light text-muted border">Doughnut</span>
+            </div>
+            <div class="card-body d-flex justify-content-center">
+                <div style="max-width: 320px; width: 100%;">
+                    <canvas id="chart7"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Chart 8: Users by Fitness Goal -->
+    <div class="col-lg-6">
+        <div class="card h-100 chart-card reveal-on-scroll">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span class="fw-bold"><i class="fa-solid fa-bullseye text-primary me-2"></i>8. Users by Fitness Goal</span>
+                <span class="badge bg-light text-muted border">Pie Chart</span>
+            </div>
+            <div class="card-body d-flex justify-content-center">
+                <div style="max-width: 320px; width: 100%;">
+                    <canvas id="chart8"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Chart 9: Monthly Workout Trend -->
+    <div class="col-lg-8">
+        <div class="card h-100 chart-card reveal-on-scroll">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span class="fw-bold"><i class="fa-solid fa-arrow-trend-up text-primary me-2"></i>9. Monthly Workout & Calorie Trend</span>
+                <span class="badge bg-light text-muted border">Multi-Axis Time Series</span>
+            </div>
+            <div class="card-body">
+                <canvas id="chart9" height="260"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Chart 10: Cluster Distribution -->
+    <div class="col-lg-4">
+        <div class="card h-100 chart-card reveal-on-scroll">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span class="fw-bold"><i class="fa-solid fa-diagram-project text-purple me-2"></i>10. K-Means Cluster Segmentation</span>
+                <span class="badge bg-light text-muted border">3 Clusters</span>
+            </div>
+            <div class="card-body d-flex flex-column align-items-center justify-content-center">
+                <div style="max-width: 250px; width: 100%;">
+                    <canvas id="chart10"></canvas>
+                </div>
+                <div class="mt-3 small text-muted text-center">
+                    Segmentation into High, Moderate, and Low Activity tiers
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    const chartData = {{ charts_json|safe }};
+    
+    // Palette
+    const colors = {
+        primary: '#0284c7',
+        cyan: '#06b6d4',
+        emerald: '#10b981',
+        amber: '#f59e0b',
+        rose: '#ef4444',
+        purple: '#8b5cf6',
+        slate: '#64748b'
+    };
+
+    // Consistent, animated chart styling across all visualizations.
+    Chart.defaults.color = '#9aa9bc';
+    Chart.defaults.font.family = "Inter, system-ui, sans-serif";
+    Chart.defaults.animation.duration = 1100;
+    Chart.defaults.animation.easing = 'easeOutQuart';
+    Chart.defaults.plugins.tooltip.backgroundColor = 'rgba(7, 11, 19, .96)';
+    Chart.defaults.plugins.tooltip.borderColor = 'rgba(16, 245, 144, .35)';
+    Chart.defaults.plugins.tooltip.borderWidth = 1;
+    Chart.defaults.plugins.tooltip.padding = 12;
+    Chart.defaults.plugins.tooltip.cornerRadius = 10;
+    Chart.defaults.plugins.legend.labels.usePointStyle = true;
+    Chart.defaults.scale.grid.color = 'rgba(148, 163, 184, .10)';
+
+    // 1. Calories by Workout Type
+    new Chart(document.getElementById('chart1'), {
+        type: 'bar',
+        data: {
+            labels: chartData.chart_1.labels,
+            datasets: [{
+                label: 'Avg Calories Burned (kcal)',
+                data: chartData.chart_1.data,
+                backgroundColor: colors.primary,
+                borderRadius: 6
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: { legend: { display: false } },
+            scales: { y: { beginAtZero: true, title: { display: true, text: 'Calories (kcal)' } } }
+        }
+    });
+
+    // 2. Average Workout Duration by Type
+    new Chart(document.getElementById('chart2'), {
+        type: 'bar',
+        data: {
+            labels: chartData.chart_2.labels,
+            datasets: [{
+                label: 'Avg Duration (mins)',
+                data: chartData.chart_2.data,
+                backgroundColor: colors.cyan,
+                borderRadius: 6
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: { legend: { display: false } },
+            scales: { y: { beginAtZero: true, title: { display: true, text: 'Minutes' } } }
+        }
+    });
+
+    // 3. Workout Frequency Distribution
+    new Chart(document.getElementById('chart3'), {
+        type: 'bar',
+        data: {
+            labels: chartData.chart_3.labels,
+            datasets: [{
+                label: 'Number of Users',
+                data: chartData.chart_3.data,
+                backgroundColor: colors.emerald,
+                borderRadius: 6
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: { legend: { display: false } },
+            scales: { y: { beginAtZero: true, title: { display: true, text: 'Users' } } }
+        }
+    });
+
+    // 4. BMI Distribution
+    new Chart(document.getElementById('chart4'), {
+        type: 'bar',
+        data: {
+            labels: chartData.chart_4.labels,
+            datasets: [{
+                label: 'Number of Users',
+                data: chartData.chart_4.data,
+                backgroundColor: colors.amber,
+                borderRadius: 6
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: { legend: { display: false } },
+            scales: { y: { beginAtZero: true, title: { display: true, text: 'User Count' } } }
+        }
+    });
+
+    // 5. Calories vs Duration Scatter
+    new Chart(document.getElementById('chart5'), {
+        type: 'scatter',
+        data: {
+            datasets: [{
+                label: 'Session Points',
+                data: chartData.chart_5,
+                backgroundColor: 'rgba(239, 68, 68, 0.6)',
+                pointRadius: 4
+            }]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                x: { title: { display: true, text: 'Duration (mins)' } },
+                y: { title: { display: true, text: 'Calories Burned (kcal)' } }
+            }
+        }
+    });
+
+    // 6. Calories vs Heart Rate Scatter
+    new Chart(document.getElementById('chart6'), {
+        type: 'scatter',
+        data: {
+            datasets: [{
+                label: 'Heart Rate vs Calories',
+                data: chartData.chart_6,
+                backgroundColor: 'rgba(139, 92, 246, 0.6)',
+                pointRadius: 4
+            }]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                x: { title: { display: true, text: 'Average Heart Rate (bpm)' } },
+                y: { title: { display: true, text: 'Calories Burned (kcal)' } }
+            }
+        }
+    });
+
+    // 7. Users by Fitness Level
+    new Chart(document.getElementById('chart7'), {
+        type: 'doughnut',
+        data: {
+            labels: chartData.chart_7.labels,
+            datasets: [{
+                data: chartData.chart_7.data,
+                backgroundColor: [colors.primary, colors.emerald, colors.amber]
+            }]
+        },
+        options: { responsive: true }
+    });
+
+    // 8. Users by Fitness Goal
+    new Chart(document.getElementById('chart8'), {
+        type: 'pie',
+        data: {
+            labels: chartData.chart_8.labels,
+            datasets: [{
+                data: chartData.chart_8.data,
+                backgroundColor: [colors.primary, colors.rose, colors.amber, colors.emerald, colors.purple]
+            }]
+        },
+        options: { responsive: true }
+    });
+
+    // 9. Monthly Workout Trend
+    new Chart(document.getElementById('chart9'), {
+        type: 'line',
+        data: {
+            labels: chartData.chart_9.labels,
+            datasets: [
+                {
+                    label: 'Total Calories (kcal)',
+                    data: chartData.chart_9.calories,
+                    borderColor: colors.primary,
+                    backgroundColor: 'rgba(2, 132, 199, 0.1)',
+                    yAxisID: 'y',
+                    fill: true,
+                    tension: 0.3
+                },
+                {
+                    label: 'Workout Count',
+                    data: chartData.chart_9.counts,
+                    borderColor: colors.emerald,
+                    yAxisID: 'y1',
+                    tension: 0.3
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                y: {
+                    type: 'linear',
+                    display: true,
+                    position: 'left',
+                    title: { display: true, text: 'Calories' }
+                },
+                y1: {
+                    type: 'linear',
+                    display: true,
+                    position: 'right',
+                    grid: { drawOnChartArea: false },
+                    title: { display: true, text: 'Workouts' }
+                }
+            }
+        }
+    });
+
+    // 10. Cluster Distribution
+    new Chart(document.getElementById('chart10'), {
+        type: 'doughnut',
+        data: {
+            labels: chartData.chart_10.labels,
+            datasets: [{
+                data: chartData.chart_10.data,
+                backgroundColor: [colors.rose, colors.amber, colors.slate]
+            }]
+        },
+        options: { responsive: true }
+    });
+
+
+    // Reveal dashboard sections as they enter the viewport.
+    const revealObserver = ('IntersectionObserver' in window) ? new IntersectionObserver((entries) => {
+        entries.forEach((entry) => {
+            if (entry.isIntersecting) {
+                entry.target.classList.add('is-visible');
+                revealObserver.unobserve(entry.target);
+            }
+        });
+    }, { threshold: 0.12 }) : null;
+    document.querySelectorAll('.reveal-on-scroll').forEach((el, index) => {
+        el.style.setProperty('--reveal-delay', `${Math.min(index % 5, 4) * 70}ms`);
+        if (revealObserver) revealObserver.observe(el); else el.classList.add('is-visible');
+    });
+
+    // Count-up effect for numeric KPI values; gracefully skips non-numeric labels.
+    document.querySelectorAll('.kpi-val').forEach((node) => {
+        const raw = node.textContent.trim();
+        const match = raw.match(/^([\d,]+(?:\.\d+)?)(.*)$/);
+        if (!match) return;
+        const target = Number(match[1].replace(/,/g, ''));
+        if (!Number.isFinite(target)) return;
+        const suffix = match[2];
+        const decimals = (match[1].split('.')[1] || '').length;
+        const start = performance.now();
+        const duration = 850;
+        const tick = (now) => {
+            const progress = Math.min((now - start) / duration, 1);
+            const eased = 1 - Math.pow(1 - progress, 4);
+            const value = target * eased;
+            node.textContent = value.toLocaleString(undefined, { minimumFractionDigits: decimals, maximumFractionDigits: decimals }) + suffix;
+            if (progress < 1) requestAnimationFrame(tick);
+        };
+        node.textContent = (0).toLocaleString() + suffix;
+        requestAnimationFrame(tick);
+    });
+
+    // Add a subtle click response to primary actions without blocking navigation.
+    document.querySelectorAll('.btn').forEach((button) => {
+        button.addEventListener('pointerdown', () => button.classList.add('button-pressed'));
+        ['pointerup', 'pointerleave', 'blur'].forEach((eventName) => button.addEventListener(eventName, () => button.classList.remove('button-pressed')));
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,279 @@
+{% extends 'base.html' %}
+
+{% block title %}Admin & Data Management{% endblock %}
+{% block page_title %}Admin Data Operations &amp; Quality Control{% endblock %}
+
+{% block content %}
+<!-- Top Action Toolbar -->
+<div class="row g-3 mb-4">
+    <!-- Data Quality Overview Cards -->
+    <div class="col-md-3">
+        <div class="card p-3 border-start border-4 border-primary">
+            <span class="text-muted small text-uppercase fw-bold">Cleanliness Score</span>
+            <h3 class="fw-bold mb-0 text-primary">{{ quality.cleanliness_score }}</h3>
+            <small class="text-muted">Overall Hygiene</small>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card p-3 border-start border-4 border-success">
+            <span class="text-muted small text-uppercase fw-bold">Active Dataset Size</span>
+            <h3 class="fw-bold mb-0 text-success">{{ quality.total_records }} Records</h3>
+            <small class="text-muted">In fitness_dataset_5000.csv</small>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card p-3 border-start border-4 border-warning">
+            <span class="text-muted small text-uppercase fw-bold">Duplicates Detected</span>
+            <h3 class="fw-bold mb-0 text-warning">{{ quality.duplicate_count }} Rows</h3>
+            <small class="text-muted">Treated by ETL</small>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card p-3 border-start border-4 border-danger">
+            <span class="text-muted small text-uppercase fw-bold">Telemetry Outliers</span>
+            <h3 class="fw-bold mb-0 text-danger">{{ quality.hr_outliers }} Readings</h3>
+            <small class="text-muted">Harmonized by ETL</small>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4 mb-4">
+    <!-- Admin Controls: Upload & Quick Actions -->
+    <div class="col-lg-4">
+        <!-- Upload Dataset Card -->
+        <div class="card shadow-sm border-0 mb-4">
+            <div class="card-header bg-white">
+                <h6 class="fw-bold mb-0"><i class="fa-solid fa-cloud-arrow-up text-primary me-2"></i>Upload Dataset</h6>
+            </div>
+            <div class="card-body p-3">
+                <form action="/etl/run/" method="POST" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold">Choose CSV / Excel File</label>
+                        <input type="file" name="dataset_file" class="form-control form-control-sm" accept=".csv, .xlsx" required>
+                    </div>
+                    <button type="submit" class="btn btn-sm btn-primary w-100">
+                        <i class="fa-solid fa-upload me-1"></i> Upload &amp; Run ETL
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Quick Admin Triggers Card -->
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-white">
+                <h6 class="fw-bold mb-0"><i class="fa-solid fa-bolt text-warning me-2"></i>Pipeline &amp; Mining Triggers</h6>
+            </div>
+            <div class="card-body p-3 d-flex flex-column gap-2">
+                <a href="/etl/" class="btn btn-outline-success btn-sm text-start">
+                    <i class="fa-solid fa-arrows-spin me-2"></i>Open ETL Pipeline Control Center
+                </a>
+                <a href="/mining/retrain/" class="btn btn-outline-warning btn-sm text-start text-dark">
+                    <i class="fa-solid fa-brain me-2"></i>Retrain All Machine Learning Models
+                </a>
+                <button type="button" class="btn btn-outline-primary btn-sm text-start" data-bs-toggle="modal" data-bs-target="#addRecordModal">
+                    <i class="fa-solid fa-plus me-2"></i>Add New User Profile Record
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Data Quality Statistics Table -->
+    <div class="col-lg-8">
+        <div class="card shadow-sm border-0 h-100">
+            <div class="card-header bg-white">
+                <h6 class="fw-bold mb-0"><i class="fa-solid fa-shield-halved text-success me-2"></i>Data Quality Audit Metrics</h6>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Audit Metric</th>
+                                <th>Observed Value</th>
+                                <th>Status</th>
+                                <th>Corrective Action Taken</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td class="fw-bold">Null / Missing Cells</td>
+                                <td>{{ quality.null_counts }} missing values</td>
+                                <td><span class="badge bg-success">Passed</span></td>
+                                <td class="small text-muted">Imputed with median/mode during ETL phase</td>
+                            </tr>
+                            <tr>
+                                <td class="fw-bold">Duplicate Tuples</td>
+                                <td>{{ quality.duplicate_count }} exact copies</td>
+                                <td><span class="badge bg-warning text-dark">Deduplicated</span></td>
+                                <td class="small text-muted">Purged via Pandas drop_duplicates() in pipeline</td>
+                            </tr>
+                            <tr>
+                                <td class="fw-bold">Cardiovascular Outliers</td>
+                                <td>{{ quality.hr_outliers }} abnormal HR values</td>
+                                <td><span class="badge bg-info">Harmonized</span></td>
+                                <td class="small text-muted">Capped at physiological maximum (220 - Age + 5)</td>
+                            </tr>
+                            <tr>
+                                <td class="fw-bold">BMI Metric Validation</td>
+                                <td>100% Recomputed</td>
+                                <td><span class="badge bg-success">Validated</span></td>
+                                <td class="small text-muted">Recomputed as weight / (height/100)²</td>
+                            </tr>
+                            <tr>
+                                <td class="fw-bold">Star Schema Integrity</td>
+                                <td>100% Referential Check</td>
+                                <td><span class="badge bg-success">Consistent</span></td>
+                                <td class="small text-muted">All foreign keys mapped to dimension surrogate keys</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Operational Records CRUD Table -->
+<div class="card shadow-sm border-0">
+    <div class="card-header bg-white d-flex justify-content-between align-items-center">
+        <div>
+            <h6 class="fw-bold mb-0"><i class="fa-solid fa-database text-primary me-2"></i>Operational Records Management (CRUD)</h6>
+            <small class="text-muted">Manage source layer records before warehouse aggregation</small>
+        </div>
+        <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#addRecordModal">
+            <i class="fa-solid fa-plus me-1"></i> Add Record
+        </button>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>ID</th>
+                        <th>User ID</th>
+                        <th>Age / Gender</th>
+                        <th>Height &amp; Weight</th>
+                        <th>BMI</th>
+                        <th>Goal</th>
+                        <th>Experience</th>
+                        <th>Frequency</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for u in page_obj %}
+                    <tr>
+                        <td class="font-monospace text-muted">{{ u.id }}</td>
+                        <td class="fw-bold font-monospace text-primary">{{ u.user_id }}</td>
+                        <td>{{ u.age }}y, {{ u.gender }}</td>
+                        <td>{{ u.height }}cm, {{ u.weight }}kg</td>
+                        <td><span class="badge bg-light text-dark border">{{ u.bmi }}</span></td>
+                        <td>{{ u.fitness_goal }}</td>
+                        <td>{{ u.experience_level }}</td>
+                        <td>{{ u.workout_frequency }} d/wk</td>
+                        <td>
+                            <form method="POST" onsubmit="return confirm('Are you sure you want to delete this record?');" style="display:inline;">
+                                {% csrf_token %}
+                                <input type="hidden" name="action" value="delete_record">
+                                <input type="hidden" name="record_id" value="{{ u.id }}">
+                                <button type="submit" class="btn btn-sm btn-outline-danger py-0 px-2" title="Delete Record">
+                                    <i class="fa-solid fa-trash-can"></i>
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="9" class="text-center text-muted py-4">No records found.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <!-- Pagination -->
+    <div class="card-footer bg-white d-flex justify-content-between align-items-center">
+        <small class="text-muted">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</small>
+        <nav>
+            <ul class="pagination pagination-sm mb-0">
+                {% if page_obj.has_previous %}
+                    <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}">Prev</a></li>
+                {% endif %}
+                {% if page_obj.has_next %}
+                    <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}">Next</a></li>
+                {% endif %}
+            </ul>
+        </nav>
+    </div>
+</div>
+
+<!-- Add Record Modal -->
+<div class="modal fade" id="addRecordModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="POST">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="add_record">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold">Add Operational User Profile</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold">User ID</label>
+                            <input type="text" name="user_id" class="form-control form-control-sm" placeholder="USR_9999" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold">Gender</label>
+                            <select name="gender" class="form-select form-select-sm">
+                                <option value="Male">Male</option>
+                                <option value="Female">Female</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold">Age</label>
+                            <input type="number" name="age" class="form-control form-control-sm" value="25" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold">Height (cm)</label>
+                            <input type="number" step="0.5" name="height" class="form-control form-control-sm" value="175" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold">Weight (kg)</label>
+                            <input type="number" step="0.5" name="weight" class="form-control form-control-sm" value="70" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold">Experience Level</label>
+                            <select name="experience_level" class="form-select form-select-sm">
+                                <option value="Beginner">Beginner</option>
+                                <option value="Intermediate">Intermediate</option>
+                                <option value="Advanced">Advanced</option>
+                            </select>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label small fw-bold">Fitness Goal</label>
+                            <select name="fitness_goal" class="form-select form-select-sm">
+                                <option value="Weight Loss">Weight Loss</option>
+                                <option value="Muscle Gain">Muscle Gain</option>
+                                <option value="Endurance">Endurance</option>
+                                <option value="General Fitness">General Fitness</option>
+                                <option value="Flexibility">Flexibility</option>
+                            </select>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label small fw-bold">Workout Frequency (days/week)</label>
+                            <input type="number" name="workout_frequency" class="form-control form-control-sm" min="1" max="7" value="3" required>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary btn-sm">Save Record</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
